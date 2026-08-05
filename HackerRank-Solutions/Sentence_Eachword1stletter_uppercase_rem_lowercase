@@ -1,0 +1,10 @@
+let sentence = "hackerRank is a great platform for learning";
+
+let result = [];
+sentence.split(' ').forEach(word => {
+    result.push(
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    );
+});
+
+console.log(result.join(' '));
