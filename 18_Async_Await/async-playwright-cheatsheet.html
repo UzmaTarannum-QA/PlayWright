@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playwright Async Cheat Sheet</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f6f9;
+        padding: 20px;
+        line-height: 1.6;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+    }
+
+    .card {
+        background: white;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+        color: #0066cc;
+    }
+
+    .pros {
+        color: green;
+    }
+
+    .cons {
+        color: red;
+    }
+
+    code {
+        background: #eee;
+        padding: 2px 5px;
+        border-radius: 4px;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Playwright Async JavaScript Cheat Sheet</h1>
+
+<div class="card">
+<h2>1. Callback</h2>
+
+<p><b>Definition:</b> A function passed as an argument to another function.</p>
+
+<p><b>Usage:</b></p>
+<code>doSomething(callback)</code>
+
+<p class="pros"><b>Pros:</b> Simple for small tasks.</p>
+<p class="cons"><b>Cons:</b> Leads to Callback Hell.</p>
+
+<p><b>Playwright:</b> Rarely used directly. Promises are preferred.</p>
+</div>
+
+<div class="card">
+<h2>2. Promise</h2>
+
+<p><b>Definition:</b> Represents a value that will be available in the future.</p>
+
+<p><b>States:</b> Pending → Resolved → Rejected</p>
+
+<p><b>Usage:</b></p>
+<code>promise.then().catch()</code>
+
+<p class="pros"><b>Pros:</b> Cleaner than callbacks.</p>
+<p class="cons"><b>Cons:</b> Long chains can become difficult to read.</p>
+
+<p><b>Playwright:</b> Almost every Playwright API returns a Promise.</p>
+
+<pre>
+page.goto(url)
+</pre>
+</div>
+
+<div class="card">
+<h2>3. async</h2>
+
+<p><b>Definition:</b> Makes a function automatically return a Promise.</p>
+
+<p><b>Usage:</b></p>
+
+<pre>
+async function login() {
+
+}
+</pre>
+
+<p class="pros"><b>Pros:</b> Cleaner asynchronous code.</p>
+<p class="cons"><b>Cons:</b> Must be paired with await for full benefit.</p>
+
+<p><b>Playwright:</b></p>
+
+<pre>
+async function login(page) {
+
+}
+</pre>
+</div>
+
+<div class="card">
+<h2>4. await</h2>
+
+<p><b>Definition:</b> Waits for a Promise to complete.</p>
+
+<p><b>Usage:</b></p>
+
+<pre>
+await promise
+</pre>
+
+<p class="pros"><b>Pros:</b> Makes async code look synchronous.</p>
+<p class="cons"><b>Cons:</b> Sequential waits may slow execution.</p>
+
+<p><b>Playwright:</b></p>
+
+<pre>
+await page.click("#login");
+await page.fill("#user","admin");
+</pre>
+</div>
+
+<div class="card">
+<h2>5. Promise.all()</h2>
+
+<p><b>Definition:</b> Runs multiple Promises in parallel and waits for all.</p>
+
+<p><b>Usage:</b></p>
+
+<pre>
+await Promise.all([p1,p2,p3]);
+</pre>
+
+<p class="pros"><b>Pros:</b> Faster execution.</p>
+<p class="cons"><b>Cons:</b> Fails if any one Promise fails.</p>
+
+<p><b>Playwright:</b></p>
+
+<pre>
+await Promise.all([
+ page.waitForNavigation(),
+ page.click("#login")
+]);
+</pre>
+
+<p><b>Interview Keyword:</b> Parallel Execution</p>
+</div>
+
+<div class="card">
+<h2>6. Promise.race()</h2>
+
+<p><b>Definition:</b> Returns the result of the first completed Promise.</p>
+
+<p><b>Usage:</b></p>
+
+<pre>
+await Promise.race([p1,p2]);
+</pre>
+
+<p class="pros"><b>Pros:</b> Useful for timeout handling.</p>
+<p class="cons"><b>Cons:</b> Other Promises continue running.</p>
+
+<p><b>Playwright Use Case:</b></p>
+
+<pre>
+await Promise.race([
+ apiCall,
+ timeoutPromise
+]);
+</pre>
+
+<p><b>Interview Keyword:</b> First Winner Wins</p>
+</div>
+
+<div class="card">
+<h2>Revision Flow</h2>
+
+<pre>
+Callback
+   ↓
+Promise
+   ↓
+async
+   ↓
+await
+   ↓
+Promise.all
+   ↓
+Promise.race
+</pre>
+
+<p>
+<b>Remember:</b><br>
+Promise = Future Result<br>
+async = Returns Promise<br>
+await = Wait for Promise<br>
+Promise.all = Wait for All<br>
+Promise.race = Wait for First
+</p>
+</div>
+
+</body>
+</html>
