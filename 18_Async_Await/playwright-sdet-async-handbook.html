@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playwright SDET Async Handbook</title>
+
+<style>
+body{
+    font-family:Segoe UI,Arial,sans-serif;
+    background:#f4f7fb;
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+    line-height:1.7;
+}
+
+h1{
+    text-align:center;
+    color:#1e40af;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin:20px 0;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+}
+
+h2{
+    color:#2563eb;
+}
+
+pre{
+    background:#f5f5f5;
+    padding:12px;
+    border-radius:8px;
+    overflow:auto;
+}
+
+.tip{
+    background:#ecfdf5;
+    border-left:4px solid green;
+    padding:12px;
+    margin-top:10px;
+}
+
+.warning{
+    background:#fff7ed;
+    border-left:4px solid orange;
+    padding:12px;
+    margin-top:10px;
+}
+
+.interview{
+    background:#eff6ff;
+    border-left:4px solid blue;
+    padding:12px;
+    margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🚀 Playwright Async Handbook for SDET Interviews</h1>
+
+<div class="card">
+<h2>Learning Flow</h2>
+
+<pre>
+Callback
+↓
+Promise
+↓
+async
+↓
+await
+↓
+try/catch
+↓
+waitForEvent
+↓
+waitForResponse
+↓
+waitForURL
+↓
+Promise.all
+↓
+Promise.allSettled
+↓
+Promise.race
+↓
+Promise.any
+</pre>
+
+<p>
+Each concept was introduced to solve a problem in the previous one.
+</p>
+</div>
+
+<!-- CALLBACK -->
+
+<div class="card">
+<h2>1. Callback</h2>
+
+<h3>Why was it introduced?</h3>
+<p>
+Some operations take time. JavaScript needed a way to execute code after those operations complete.
+</p>
+
+<h3>Definition</h3>
+<p>
+A function passed into another function that runs later.
+</p>
+
+<h3>Example</h3>
+
+<pre>
+function greet(callback) {
+   console.log("Hello");
+   callback();
+}
+
+greet(() => console.log("Uzma"));
+</pre>
+
+<h3>Problem Created</h3>
+
+<pre>
+login(() => {
+   navigate(() => {
+      search(() => {
+         logout(() => {
+            console.log("Done");
+         });
+      });
+   });
+});
+</pre>
+
+<p>Callback Hell.</p>
+
+<h3>Playwright Relevance</h3>
+<p>
+Rarely used directly. Playwright is Promise-based.
+</p>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+Callbacks were the original async solution. Promises were introduced to solve Callback Hell.
+</div>
+</div>
+
+<!-- PROMISE -->
+
+<div class="card">
+<h2>2. Promise</h2>
+
+<h3>Definition</h3>
+
+<p>
+Represents a future result of an asynchronous operation.
+</p>
+
+<h3>States</h3>
+
+<pre>
+Pending
+↓
+Fulfilled
+OR
+Rejected
+</pre>
+
+<h3>Example</h3>
+
+<pre>
+const p = new Promise((resolve,reject)=>{
+
+   const success = true;
+
+   if(success){
+      resolve("Success");
+   }else{
+      reject("Failed");
+   }
+
+});
+</pre>
+
+<h3>Consume</h3>
+
+<pre>
+p.then(result => console.log(result))
+ .catch(error => console.log(error));
+</pre>
+
+<h3>Playwright Example</h3>
+
+<pre>
+const result =
+page.goto("https://google.com");
+</pre>
+
+<p>
+page.goto() returns a Promise.
+</p>
+
+<div class="tip">
+Almost every Playwright API returns a Promise.
+</div>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+Playwright is Promise-based because browser actions take time.
+</div>
+
+</div>
+
+<!-- ASYNC -->
+
+<div class="card">
+
+<h2>3. async</h2>
+
+<h3>Definition</h3>
+
+<p>
+Makes a function automatically return a Promise.
+</p>
+
+<pre>
+async function greet() {
+   return "Hello";
+}
+</pre>
+
+Actually:
+
+<pre>
+Promise.resolve("Hello")
+</pre>
+
+<h3>Playwright Example</h3>
+
+<pre>
+async function login(page){
+
+   await page.fill("#user","admin");
+
+   await page.fill("#pass","admin123");
+
+   await page.click("#login");
+
+}
+</pre>
+
+<div class="warning">
+Any function using await must be async.
+</div>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+async marks a function as asynchronous and ensures it returns a Promise.
+</div>
+
+</div>
+
+<!-- AWAIT -->
+
+<div class="card">
+
+<h2>4. await</h2>
+
+<h3>Definition</h3>
+
+<p>
+Waits for a Promise to complete.
+</p>
+
+<h3>Wrong</h3>
+
+<pre>
+page.click("#login");
+
+page.fill("#search","iphone");
+</pre>
+
+<h3>Correct</h3>
+
+<pre>
+await page.click("#login");
+
+await page.fill("#search","iphone");
+</pre>
+
+<h3>Playwright Example</h3>
+
+<pre>
+await page.goto(url);
+
+await page.fill("#username","admin");
+
+await page.click("#login");
+</pre>
+
+<div class="warning">
+Forgetting await is one of the most common Playwright mistakes.
+</div>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+await pauses the current async function until a Promise settles.
+It does not block JavaScript entirely.
+</div>
+
+</div>
+
+<!-- TRY CATCH -->
+
+<div class="card">
+
+<h2>5. try / catch</h2>
+
+<h3>Why?</h3>
+
+<p>
+Promises can fail. We need a clean way to handle errors.
+</p>
+
+<h3>Example</h3>
+
+<pre>
+try {
+
+   await page.goto(url);
+
+   await page.click("#login");
+
+}
+catch(error){
+
+   console.log(error.message);
+
+}
+</pre>
+
+<h3>Playwright Example</h3>
+
+<pre>
+try {
+
+   await page.waitForResponse("**/orders");
+
+}
+catch(error){
+
+   await page.screenshot({
+      path:"failure.png"
+   });
+
+   throw error;
+}
+</pre>
+
+<div class="tip">
+try/catch is the async version of .catch()
+</div>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+Used with async/await for handling rejected Promises.
+</div>
+
+</div>
+
+<!-- WAITFOREVENT -->
+
+<div class="card">
+
+<h2>6. waitForEvent()</h2>
+
+<h3>Why?</h3>
+
+<p>
+Many user actions trigger browser events.
+</p>
+
+<ul>
+<li>Popup</li>
+<li>Download</li>
+<li>Dialog</li>
+<li>New Tab</li>
+<li>File Chooser</li>
+</ul>
+
+<h3>Wrong</h3>
+
+<pre>
+await page.click("#download");
+
+await page.waitForEvent("download");
+</pre>
+
+<h3>Correct</h3>
+
+<pre>
+const [download] =
+await Promise.all([
+
+   page.waitForEvent(
+      "download"
+   ),
+
+   page.click("#download")
+
+]);
+</pre>
+
+<div class="tip">
+Arm the listener first, then fire the trigger.
+</div>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+waitForEvent waits for browser events.
+Usually combined with Promise.all so no event is missed.
+</div>
+
+</div>
+
+<!-- WAIT FOR RESPONSE -->
+
+<div class="card">
+
+<h2>7. waitForResponse()</h2>
+
+<h3>Why?</h3>
+
+<p>
+Used when UI behavior depends on an API call.
+</p>
+
+<h3>Example</h3>
+
+<pre>
+await Promise.all([
+
+   page.waitForResponse(
+      "**/orders"
+   ),
+
+   page.click("#search")
+
+]);
+</pre>
+
+<h3>Advanced</h3>
+
+<pre>
+const response =
+await page.waitForResponse(
+   response =>
+      response.url()
+         .includes("/orders")
+      &&
+      response.status() === 200
+);
+</pre>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+Used to synchronize tests with API responses.
+</div>
+
+</div>
+
+<!-- WAIT FOR URL -->
+
+<div class="card">
+
+<h2>8. waitForURL()</h2>
+
+<h3>Why?</h3>
+
+<p>
+Used when actions result in navigation.
+</p>
+
+<h3>Example</h3>
+
+<pre>
+await Promise.all([
+
+   page.waitForURL(
+      "**/dashboard"
+   ),
+
+   page.click("#login")
+
+]);
+</pre>
+
+<div class="tip">
+Most common Promise.all interview question.
+</div>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+Ensures navigation completes before continuing.
+</div>
+
+</div>
+
+<!-- PROMISE ALL -->
+
+<div class="card">
+
+<h2>9. Promise.all()</h2>
+
+<h3>Definition</h3>
+
+<p>
+Runs multiple Promises in parallel and waits for all.
+</p>
+
+<h3>Without Promise.all</h3>
+
+<pre>
+await task1();
+await task2();
+await task3();
+</pre>
+
+<h3>With Promise.all</h3>
+
+<pre>
+await Promise.all([
+   task1(),
+   task2(),
+   task3()
+]);
+</pre>
+
+<h3>Playwright Example</h3>
+
+<pre>
+await Promise.all([
+
+   page.waitForURL(
+      "**/dashboard"
+   ),
+
+   page.click("#login")
+
+]);
+</pre>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+Runs tasks in parallel.
+Fails if any one Promise fails.
+</div>
+
+</div>
+
+<!-- ALL SETTLED -->
+
+<div class="card">
+
+<h2>10. Promise.allSettled()</h2>
+
+<h3>Problem</h3>
+
+<p>
+Promise.all fails fast.
+Sometimes we need every result.
+</p>
+
+<h3>Example</h3>
+
+<pre>
+const results =
+await Promise.allSettled([
+
+   api1(),
+
+   api2(),
+
+   api3()
+
+]);
+</pre>
+
+<h3>Output</h3>
+
+<pre>
+[
+  {status:"fulfilled"},
+  {status:"rejected"},
+  {status:"fulfilled"}
+]
+</pre>
+
+<h3>Playwright Example</h3>
+
+<pre>
+const validations =
+await Promise.allSettled([
+
+   page.locator("#user")
+       .textContent(),
+
+   page.locator("#role")
+       .textContent(),
+
+   page.locator("#team")
+       .textContent()
+
+]);
+</pre>
+
+<div class="interview">
+<b>Interview Answer:</b><br>
+Promise.all waits for all but fails on first error.
+Promise.allSettled waits for all regardless of success or failure.
+</div>
+
+</div>
+
+<!-- PROMISE RACE -->
+
+<div class="card">
+
+<h2>11. Promise.race()</h2>
+
+<h3>Definition</h3>
+
+<p>
+Returns the first settled Promise.
+</p>
+
+<h3>Playwright Example</h3>
+
+<pre>
+await Promise.race([
+
+   page.locator(".success")
+       .waitFor(),
+
+   page.locator(".error")
+       .waitFor()
+
+]);
+</pre>
+
+<h3>Timeout Example</h3>
+
+<pre>
+await Promise.race([
+
+   page.waitForResponse(
+      "**/orders"
+   ),
+
+   new 
