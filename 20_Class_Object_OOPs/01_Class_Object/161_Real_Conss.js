@@ -12,10 +12,13 @@ class TestCase{
     }
 }
 
-let loginTest_ref = new TestCase("Login Test","PASS","P0");
-let signupTest_ref = new TestCase("Signup Test","FAIL","P1");
+let reset = new TestCase("uzma","PASS","P0");
+reset.display();
 
-loginTest_ref.display();
-signupTest_ref.display();
+// let loginTest_ref = new TestCase("Login Test","PASS","P0");
+// let signupTest_ref = new TestCase("Signup Test","FAIL","P1");
+
+// loginTest_ref.display();
+// signupTest_ref.display();
 
 

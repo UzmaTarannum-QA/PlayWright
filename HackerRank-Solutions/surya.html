@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Async JavaScript — A Field Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1016;
+    --surface:#141a24;
+    --surface-2:#1b2330;
+    --line:#26303f;
+    --text:#e8ebf0;
+    --muted:#8a95a6;
+    --sync:#ff8fa3;      /* call stack / synchronous */
+    --micro:#7ee7c7;     /* microtask / promises */
+    --macro:#ffbe6b;     /* macrotask / setTimeout */
+    --keyword:#8fb8ff;   /* signature blue for keywords */
+    --good:#7ee7c7;
+    --warn:#ffbe6b;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk',system-ui,sans-serif;
+    line-height:1.6;
+  }
+  code, pre, .mono{
+    font-family:'JetBrains Mono',monospace;
+  }
+  a{color:var(--keyword);}
+
+  /* ---------- layout ---------- */
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 28px;
+  }
+  header.hero{
+    padding:88px 0 64px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--macro);
+    margin:0 0 18px;
+  }
+  h1{
+    font-size:clamp(34px,5vw,58px);
+    line-height:1.05;
+    margin:0 0 20px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  h1 .accent{color:var(--keyword);}
+  .lede{
+    max-width:640px;
+    font-size:18px;
+    color:var(--muted);
+    margin:0 0 40px;
+  }
+
+  /* queue diagram in hero */
+  .queue-strip{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:20px;
+  }
+  .queue-chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    padding:8px 14px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--surface);
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot.sync{background:var(--sync);}
+  .dot.micro{background:var(--micro);}
+  .dot.macro{background:var(--macro);}
+
+  /* nav */
+  nav.toc{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:rgba(12,16,22,0.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  nav.toc .wrap{
+    display:flex;
+    gap:4px;
+    overflow-x:auto;
+    padding-top:14px;
+    padding-bottom:14px;
+  }
+  nav.toc a{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--muted);
+    text-decoration:none;
+    padding:8px 14px;
+    border-radius:8px;
+    white-space:nowrap;
+    border:1px solid transparent;
+  }
+  nav.toc a:hover{
+    color:var(--text);
+    border-color:var(--line);
+    background:var(--surface);
+  }
+
+  /* sections */
+  main{padding:64px 0 40px;}
+  section.topic{
+    padding:56px 0;
+    border-bottom:1px solid var(--line);
+    scroll-margin-top:70px;
+  }
+  section.topic:last-of-type{border-bottom:none;}
+  .topic-head{
+    display:grid;
+    grid-template-columns:64px 1fr;
+    gap:20px;
+    align-items:start;
+    margin-bottom:26px;
+  }
+  .topic-num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--muted);
+    border:1px solid var(--line);
+    border-radius:8px;
+    width:52px;
+    height:52px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--surface);
+  }
+  h2{
+    font-size:28px;
+    margin:0 0 6px;
+    font-weight:600;
+  }
+  h2 code{
+    color:var(--keyword);
+    background:var(--surface-2);
+    padding:2px 10px;
+    border-radius:6px;
+    font-size:.85em;
+  }
+  .topic-tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.05em;
+    text-transform:uppercase;
+  }
+  .topic-body{
+    display:grid;
+    grid-template-columns:1.05fr 1fr;
+    gap:36px;
+  }
+  @media (max-width:860px){
+    .topic-body{grid-template-columns:1fr;}
+    .topic-head{grid-template-columns:44px 1fr;}
+  }
+  .topic-body p{color:var(--text);}
+  .topic-body p.muted{color:var(--muted);}
+
+  pre{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 20px;
+    overflow-x:auto;
+    font-size:13.5px;
+    line-height:1.65;
+    margin:0;
+  }
+  pre code{color:var(--text);}
+  .tok-kw{color:var(--keyword);}
+  .tok-fn{color:var(--good);}
+  .tok-str{color:var(--macro);}
+  .tok-cm{color:var(--muted);font-style:italic;}
+
+  .callout{
+    margin-top:16px;
+    border-left:3px solid var(--warn);
+    background:var(--surface);
+    padding:12px 16px;
+    border-radius:0 8px 8px 0;
+    font-size:14px;
+    color:var(--muted);
+  }
+  .callout b{color:var(--warn);font-weight:600;}
+  .callout.good{border-left-color:var(--good);}
+  .callout.good b{color:var(--good);}
+
+  ul.points{
+    margin:14px 0 0;
+    padding-left:20px;
+    color:var(--muted);
+    font-size:14.5px;
+  }
+  ul.points li{margin-bottom:6px;}
+  ul.points b{color:var(--text);}
+
+  /* comparison table */
+  .compare-wrap{padding:56px 0;border-bottom:1px solid var(--line);}
+  table.compare{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:24px;
+    font-size:14.5px;
+  }
+  table.compare th, table.compare td{
+    text-align:left;
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  table.compare th{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--muted);
+    border-bottom:1px solid var(--line);
+  }
+  table.compare td.method{
+    font-family:'JetBrains Mono',monospace;
+    color:var(--keyword);
+    white-space:nowrap;
+  }
+
+  /* event loop demo - signature element */
+  .demo{
+    padding:64px 0 90px;
+  }
+  .demo-panel{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+    margin-top:28px;
+  }
+  @media (max-width:860px){.demo-panel{grid-template-columns:1fr;}}
+  .demo-code{position:relative;}
+  .run-btn{
+    margin-top:16px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13.5px;
+    background:var(--keyword);
+    color:#0c1016;
+    border:none;
+    padding:11px 22px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    letter-spacing:.02em;
+  }
+  .run-btn:hover{opacity:.88;}
+  .run-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  .queues{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .queue-box{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+  }
+  .queue-box h4{
+    margin:0 0 10px;
+    font-size:12px;
+    font-family:'JetBrains Mono',monospace;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .queue-items{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    min-height:34px;
+  }
+  .qitem{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:6px 10px;
+    border-radius:6px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    transition:transform .25s ease, opacity .25s ease, background .25s ease;
+  }
+  .qitem.active{
+    background:var(--keyword);
+    color:#0c1016;
+    border-color:var(--keyword);
+    transform:translateY(-2px);
+  }
+  .console-out{
+    background:#080a0e;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    min-height:130px;
+    color:var(--good);
+  }
+  .console-out .line{
+    color:var(--text);
+    opacity:0;
+    transform:translateX(-4px);
+    animation:pop .3s ease forwards;
+  }
+  @keyframes pop{to{opacity:1;transform:translateX(0);}}
+  .console-out .line::before{content:"› ";color:var(--muted);}
+
+  footer{
+    padding:36px 0 60px;
+    color:var(--muted);
+    font-size:13px;
+    font-family:'JetBrains Mono',monospace;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">A field guide to non-blocking JavaScript</p>
+    <h1>Six words that decide<br><span class="accent">what runs when.</span></h1>
+    <p class="lede">JavaScript runs on a single thread, yet it juggles network calls, timers, and file reads without freezing the page. The trick isn't magic — it's a queueing system, and these six keywords are how you talk to it.</p>
+    <div class="queue-strip">
+      <span class="queue-chip"><span class="dot sync"></span>call stack — synchronous, runs first</span>
+      <span class="queue-chip"><span class="dot micro"></span>microtask queue — promises, async/await</span>
+      <span class="queue-chip"><span class="dot macro"></span>macrotask queue — setTimeout, callbacks</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#async">01 async</a>
+    <a href="#await">02 await</a>
+    <a href="#promise">03 new Promise</a>
+    <a href="#all">04 Promise.all</a>
+    <a href="#race">05 Promise.race</a>
+    <a href="#allsettled">06 Promise.allSettled</a>
+    <a href="#any">07 Promise.any</a>
+    <a href="#callback">08 Callback</a>
+    <a href="#compare">Compare</a>
+    <a href="#demo">Run it live</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- 1. ASYNC -->
+  <section class="topic" id="async">
+    <div class="topic-head">
+      <div class="topic-num">01</div>
+      <div>
+        <p class="topic-tag">Function modifier</p>
+        <h2><code>async</code></h2>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div>
+        <p>Placing <code class="mono">async</code> before a function declaration does two things: it makes the function always return a <b>Promise</b>, even if you just return a plain value, and it unlocks the use of <code class="mono">await</code> inside that function's body.</p>
+        <p class="muted">Think of it as a permission slip — <code class="mono">await</code> only works inside a function that's been marked <code class="mono">async</code> (or at the top level of a module).</p>
+        <ul class="points">
+          <li><b>Always returns a Promise.</b> Returning <code class="mono">42</code> from an async function actually resolves a Promise with the value <code class="mono">42</code>.</li>
+          <li><b>Errors become rejections.</b> A thrown error inside an async function rejects the returned Promise instead of throwing synchronously.</li>
+          <li>Works on function declarations, expressions, arrow functions, and class/object methods.</li>
+        </ul>
+      </div>
+      <div>
+        <pre><code><span class="tok-kw">async function</span> <span class="tok-fn">getUser</span>(id) {
+  <span class="tok-kw">return</span> { id, name: <span class="tok-str">"Riya"</span> };
+}
+
+getUser(1).then(user => {
+  console.log(user); <span class="tok-cm">// { id: 1, name: "Riya" }</span>
+});
+
+<span class="tok-cm">// getUser() itself returns a Promise,</span>
+<span class="tok-cm">// not the object directly.</span>
+console.log(getUser(1)); <span class="tok-cm">// Promise {&lt;pending&gt;}</span></code></pre>
+        <div class="callout">
+          <b>Gotcha —</b> calling an async function does not pause execution. It runs synchronously until the first <code class="mono">await</code>, then hands control back immediately.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. AWAIT -->
+  <section class="topic" id="await">
+    <div class="topic-head">
+      <div class="topic-num">02</div>
+      <div>
+        <p class="topic-tag">Operator</p>
+        <h2><code>await</code></h2>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div>
+        <p><code class="mono">await</code> pauses execution of the surrounding <code class="mono">async</code> function until the Promise it's given settles, then unwraps it — returning the resolved value, or throwing the rejection reason as a regular exception you can catch with <code class="mono">try/catch</code>.</p>
+        <p class="muted">Crucially, it only blocks that one function. The rest of the program — the call stack, the UI, other code — keeps running.</p>
+        <ul class="points">
+          <li><b>Reads like sync code.</b> That's the entire point: it replaces chained <code class="mono">.then()</code> calls with linear, top-to-bottom logic.</li>
+          <li><b>Pauses, doesn't block the thread.</b> Control returns to the event loop while waiting.</li>
+          <li>Awaiting a non-Promise value just resolves immediately with that value.</li>
+        </ul>
+      </div>
+      <div>
+        <pre><code><span class="tok-kw">async function</span> <span class="tok-fn">loadProfile</span>() {
+  <span class="tok-kw">try</span> {
+    <span class="tok-kw">const</span> res = <span class="tok-kw">await</span> fetch(<span class="tok-str">"/api/user"</span>);
+    <span class="tok-kw">const</span> data = <span class="tok-kw">await</span> res.json();
+    console.log(data);
+  } <span class="tok-kw">catch</span> (err) {
+    console.error(<span class="tok-str">"Failed to load:"</span>, err);
+  }
+}</code></pre>
+        <div class="callout good">
+          <b>Pattern —</b> pair every <code class="mono">await</code>-heavy function with <code class="mono">try/catch</code>. It's the async equivalent of a Promise's <code class="mono">.catch()</code>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. NEW PROMISE -->
+  <section class="topic" id="promise">
+    <div class="topic-head">
+      <div class="topic-num">03</div>
+      <div>
+        <p class="topic-tag">Constructor</p>
+        <h2><code>new Promise()</code></h2>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div>
+        <p>A <code class="mono">Promise</code> is an object representing a value that isn't ready yet. You construct one with an <b>executor function</b> that receives two callbacks — <code class="mono">resolve</code> and <code class="mono">reject</code> — and you call whichever one fits once the async work finishes.</p>
+        <p class="muted">Every Promise sits in one of three states: <b>pending</b>, <b>fulfilled</b>, or <b>rejected</b> — and once it settles, it can never change state again.</p>
+        <ul class="points">
+          <li>Use this constructor to <b>wrap</b> callback-based APIs (timers, file reads, older libraries) into something <code class="mono">await</code>-able.</li>
+          <li>You rarely need <code class="mono">new Promise()</code> when calling modern APIs like <code class="mono">fetch</code> — they already return Promises.</li>
+          <li>Consumed with <code class="mono">.then()</code> / <code class="mono">.catch()</code>, or with <code class="mono">await</code>.</li>
+        </ul>
+      </div>
+      <div>
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">wait</span>(ms) {
+  <span class="tok-kw">return new</span> Promise((resolve, reject) => {
+    <span class="tok-kw">if</span> (ms &lt; 0) {
+      <span class="tok-kw">return</span> reject(<span class="tok-kw">new</span> Error(<span class="tok-str">"negative delay"</span>));
+    }
+    setTimeout(() => resolve(<span class="tok-str">`waited ${ms}ms`</span>), ms);
+  });
+}
+
+wait(500).then(console.log); <span class="tok-cm">// "waited 500ms"</span></code></pre>
+        <div class="callout">
+          <b>Gotcha —</b> forgetting to call <code class="mono">resolve</code> or <code class="mono">reject</code> leaves the Promise pending forever — a silent, hard-to-debug hang.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. PROMISE.ALL -->
+  <section class="topic" id="all">
+    <div class="topic-head">
+      <div class="topic-num">04</div>
+      <div>
+        <p class="topic-tag">Static method</p>
+        <h2><code>Promise.all()</code></h2>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div>
+        <p>Takes an array (or any iterable) of Promises and returns a single Promise that fulfills once <b>every</b> one of them fulfills, with an array of results in the same order you passed them in.</p>
+        <p class="muted">If <b>any</b> Promise rejects, the whole thing rejects immediately with that reason — the other Promises keep running, but their results are discarded.</p>
+        <ul class="points">
+          <li>Best for independent tasks you need <b>all</b> of before continuing — e.g. loading a user, their posts, and their settings together.</li>
+          <li>Fails fast: one rejection sinks the batch.</li>
+          <li>Want partial results even on failure? Use <code class="mono">Promise.allSettled()</code> instead.</li>
+        </ul>
+      </div>
+      <div>
+        <pre><code><span class="tok-kw">const</span> [user, posts, settings] = <span class="tok-kw">await</span> Promise.all([
+  fetch(<span class="tok-str">"/api/user"</span>).then(r => r.json()),
+  fetch(<span class="tok-str">"/api/posts"</span>).then(r => r.json()),
+  fetch(<span class="tok-str">"/api/settings"</span>).then(r => r.json()),
+]);
+<span class="tok-cm">// all three requests fire in parallel</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. PROMISE.RACE -->
+  <section class="topic" id="race">
+    <div class="topic-head">
+      <div class="topic-num">05</div>
+      <div>
+        <p class="topic-tag">Static method</p>
+        <h2><code>Promise.race()</code></h2>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div>
+        <p>Also takes an array of Promises, but settles as soon as the <b>first</b> one settles — fulfilled or rejected — and ignores the rest. Whichever Promise crosses the finish line first decides the outcome.</p>
+        <ul class="points">
+          <li><b>Classic use case: timeouts.</b> Race a real request against a timer Promise; whichever finishes first wins.</li>
+          <li>"Race" includes rejections — a fast failure beats a slow success.</li>
+          <li>Losing Promises aren't cancelled, they just get ignored — this doesn't stop network requests already in flight.</li>
+        </ul>
+      </div>
+      <div>
+        <pre><code><span class="tok-kw">function</span> <span class="tok-fn">withTimeout</span>(promise, ms) {
+  <span class="tok-kw">const</span> timeout = <span class="tok-kw">new</span> Promise((_, reject) =>
+    setTimeout(() => reject(<span class="tok-kw">new</span> Error(<span class="tok-str">"timed out"</span>)), ms)
+  );
+  <span class="tok-kw">return</span> Promise.race([promise, timeout]);
+}
+
+<span class="tok-kw">try</span> {
+  <span class="tok-kw">const</span> data = <span class="tok-kw">await</span> withTimeout(fetch(<span class="tok-str">"/slow"</span>), 3000);
+} <span class="tok-kw">catch</span> (e) {
+  console.error(e.message); <span class="tok-cm">// "timed out" if too slow</span>
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. PROMISE.ALLSETTLED -->
+  <section class="topic" id="allsettled">
+    <div class="topic-head">
+      <div class="topic-num">06</div>
+      <div>
+        <p class="topic-tag">Static method</p>
+        <h2><code>Promise.allSettled()</code></h2>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div>
+        <p>Like <code class="mono">Promise.all()</code>, but it never short-circuits. It waits for <b>every</b> Promise to settle — fulfilled or rejected — and resolves with an array describing each outcome individually. Nothing is ever discarded.</p>
+        <p class="muted">Each entry in the result array has a <code class="mono">status</code> of <code class="mono">"fulfilled"</code> or <code class="mono">"rejected"</code>, plus either a <code class="mono">value</code> or a <code class="mono">reason</code>.</p>
+        <ul class="points">
+          <li><b>Use when partial failure is fine.</b> You want to know what succeeded and what didn't, without one failure sinking the batch.</li>
+          <li>Added in ES2020 — specifically to fix <code class="mono">Promise.all</code>'s fail-fast behavior when you don't want it.</li>
+          <li>Never rejects itself — the returned Promise always fulfills.</li>
+        </ul>
+      </div>
+      <div>
+        <pre><code><span class="tok-kw">const</span> results = <span class="tok-kw">await</span> Promise.allSettled([
+  fetch(<span class="tok-str">"/api/user"</span>).then(r => r.json()),
+  fetch(<span class="tok-str">"/api/broken-endpoint"</span>).then(r => r.json()),
+]);
+
+results.forEach(r => {
+  <span class="tok-kw">if</span> (r.status === <span class="tok-str">"fulfilled"</span>) {
+    console.log(<span class="tok-str">"got:"</span>, r.value);
+  } <span class="tok-kw">else</span> {
+    console.log(<span class="tok-str">"failed:"</span>, r.reason);
+  }
+});</code></pre>
+        <div class="callout good">
+          <b>Pattern —</b> perfect for dashboards or batch jobs where one broken data source shouldn't take down the whole page.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. PROMISE.ANY -->
+  <section class="topic" id="any">
+    <div class="topic-head">
+      <div class="topic-num">07</div>
+      <div>
+        <p class="topic-tag">Static method</p>
+        <h2><code>Promise.any()</code></h2>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div>
+        <p>The optimistic sibling of <code class="mono">race()</code>: it resolves as soon as the <b>first Promise fulfills</b> — ignoring rejections along the way, unless every single Promise rejects.</p>
+        <p class="muted">If all Promises reject, it rejects with an <code class="mono">AggregateError</code> that bundles every individual rejection reason together.</p>
+        <ul class="points">
+          <li><b>Use for redundancy:</b> hit several mirrors or servers at once, and take whichever responds successfully first.</li>
+          <li>Unlike <code class="mono">race()</code>, a fast failure does <b>not</b> win — only a fulfillment counts.</li>
+          <li>Also ES2021+; check runtime support in older environments.</li>
+        </ul>
+      </div>
+      <div>
+        <pre><code><span class="tok-kw">try</span> {
+  <span class="tok-kw">const</span> fastest = <span class="tok-kw">await</span> Promise.any([
+    fetch(<span class="tok-str">"https://mirror1.example/data"</span>),
+    fetch(<span class="tok-str">"https://mirror2.example/data"</span>),
+    fetch(<span class="tok-str">"https://mirror3.example/data"</span>),
+  ]);
+  console.log(<span class="tok-str">"first successful mirror:"</span>, fastest.url);
+} <span class="tok-kw">catch</span> (err) {
+  console.error(<span class="tok-str">"all mirrors failed:"</span>, err.errors);
+}</code></pre>
+        <div class="callout">
+          <b>Gotcha —</b> don't confuse this with <code class="mono">Promise.all</code>. "Any" cares about the first <i>success</i>; "all" cares about <i>every</i> outcome.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. CALLBACK -->
+  <section class="topic" id="callback">
+    <div class="topic-head">
+      <div class="topic-num">08</div>
+      <div>
+        <p class="topic-tag">Pattern, not syntax</p>
+        <h2>Callback</h2>
+      </div>
+    </div>
+    <div class="topic-body">
+      <div>
+        <p>The original async pattern: pass a function as an argument, and have the async operation <b>call it back</b> once it's done. No special keyword — just a function reference handed to another function.</p>
+        <p class="muted">Promises and <code class="mono">async/await</code> were built on top of this idea, largely to fix its readability problems.</p>
+        <ul class="points">
+          <li><b>Node.js convention:</b> error-first callbacks — <code class="mono">(err, data) => {}</code> — check <code class="mono">err</code> before touching <code class="mono">data</code>.</li>
+          <li><b>Callback hell:</b> nesting callbacks inside callbacks produces a rightward-drifting pyramid that's hard to read or refactor.</li>
+          <li>Still everywhere: event listeners (<code class="mono">addEventListener</code>), array methods (<code class="mono">.map</code>, <code class="mono">.forEach</code>), and older Node APIs all use callbacks.</li>
+        </ul>
+      </div>
+      <div>
+        <pre><code><span class="tok-cm">// classic "callback hell"</span>
+getUser(id, (err, user) => {
+  <span class="tok-kw">if</span> (err) <span class="tok-kw">return</span> handleError(err);
+  getPosts(user.id, (err, posts) => {
+    <span class="tok-kw">if</span> (err) <span class="tok-kw">return</span> handleError(err);
+    renderPage(user, posts); <span class="tok-cm">// nesting deepens...</span>
+  });
+});
+
+<span class="tok-cm">// still a callback — just a clean one</span>
+button.addEventListener(<span class="tok-str">"click"</span>, () => {
+  console.log(<span class="tok-str">"clicked"</span>);
+});</code></pre>
+        <div class="callout">
+          <b>Why it faded —</b> error handling had to be repeated at every level, and execution order became hard to trace. Promises replaced nesting with chaining; <code class="mono">async/await</code> replaced chaining with plain sequential code.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON -->
+  <div class="compare-wrap" id="compare">
+    <p class="topic-tag">At a glance</p>
+    <h2>The four Promise combinators, side by side</h2>
+    <table class="compare">
+      <thead>
+        <tr><th>Method</th><th>Resolves when…</th><th>Rejects when…</th><th>Result</th><th>Typical use</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="method">Promise.all</td>
+          <td>Every Promise fulfills</td>
+          <td>Any single Promise rejects (fails fast)</td>
+          <td>Array of all results, in order</td>
+          <td>Load several independent things you need all of</td>
+        </tr>
+        <tr>
+          <td class="method">Promise.race</td>
+          <td>The first Promise settles (fulfilled or rejected)</td>
+          <td>The first Promise to settle rejects</td>
+          <td>The value/reason of the winner</td>
+          <td>Timeouts, fastest-response wins regardless of outcome</td>
+        </tr>
+        <tr>
+          <td class="method">Promise.allSettled</td>
+          <td>Every Promise settles — always resolves</td>
+          <td>Never rejects</td>
+          <td>Array of <code class="mono">{status, value|reason}</code> for each</td>
+          <td>Batch jobs where partial failure is acceptable</td>
+        </tr>
+        <tr>
+          <td class="method">Promise.any</td>
+          <td>The first Promise fulfills (rejections are skipped)</td>
+          <td>All Promises reject</td>
+          <td>The value of the first success, or an <code class="mono">AggregateError</code></td>
+          <td>Redundant sources — take whichever succeeds first</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SIGNATURE INTERACTIVE DEMO -->
+  <div class="demo" id="demo">
+    <p class="topic-tag">See it, don't just read it</p>
+    <h2>Who runs first? Run the event loop yourself.</h2>
+    <p class="muted" style="max-width:640px;">This snippet mixes a synchronous log, a <code class="mono">setTimeout</code>, and a resolved Promise. Press run to watch the call stack empty out, then the microtask queue drain completely, and only then the macrotask queue get its turn.</p>
+
+    <div class="demo-panel">
+      <div class="demo-code">
+        <pre><code>console.log(<span class="tok-str">"1: sync start"</span>);
+
+setTimeout(() => {
+  console.log(<span class="tok-str">"4: setTimeout (macrotask)"</span>);
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log(<span class="tok-str">"3: promise.then (microtask)"</span>);
+});
+
+console.log(<span class="tok-str">"2: sync end"</span>);</code></pre>
+        <button class="run-btn" id="runBtn">▸ Run this code</button>
+      </div>
+
+      <div>
+        <div class="queues">
+          <div class="queue-box">
+            <h4><span class="dot sync"></span>Call stack</h4>
+            <div class="queue-items" id="stackItems"></div>
+          </div>
+          <div class="queue-box">
+            <h4><span class="dot micro"></span>Microtask queue</h4>
+            <div class="queue-items" id="microItems"></div>
+          </div>
+          <div class="queue-box">
+            <h4><span class="dot macro"></span>Macrotask queue</h4>
+            <div class="queue-items" id="macroItems"></div>
+          </div>
+        </div>
+        <div class="console-out" id="consoleOut" style="margin-top:14px;"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div class="wrap">async · await · new Promise · Promise.all · Promise.race · Promise.allSettled · Promise.any · callback — a quick-reference guide</div>
+</footer>
+
+<script>
+const runBtn = document.getElementById('runBtn');
+const stackEl = document.getElementById('stackItems');
+const microEl = document.getElementById('microItems');
+const macroEl = document.getElementById('macroItems');
+const outEl = document.getElementById('consoleOut');
+
+function chip(label, cls){
+  const d = document.createElement('div');
+  d.className = 'qitem' + (cls ? ' ' + cls : '');
+  d.textContent = label;
+  return d;
+}
+
+function logLine(text){
+  const l = document.createElement('div');
+  l.className = 'line';
+  l.textContent = text;
+  outEl.appendChild(l);
+}
+
+function reset(){
+  stackEl.innerHTML = '';
+  microEl.innerHTML = '';
+  macroEl.innerHTML = '';
+  outEl.innerHTML = '';
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function playDemo(){
+  runBtn.disabled = true;
+  reset();
+
+  const s1 = chip('log("1: sync start")');
+  stackEl.appendChild(s1);
+  await sleep(500);
+  s1.classList.add('active');
+  logLine('1: sync start');
+  await sleep(500);
+  stackEl.removeChild(s1);
+
+  const macro = chip('setTimeout callback', 'active');
+  macroEl.appendChild(macro);
+  await sleep(300);
+
+  const micro = chip('.then callback', 'active');
+  microEl.appendChild(micro);
+  await sleep(300);
+
+  const s2 = chip('log("2: sync end")');
+  stackEl.appendChild(s2);
+  await sleep(500);
+  s2.classList.add('active');
+  logLine('2: sync end');
+  await sleep(500);
+  stackEl.removeChild(s2);
+
+  await sleep(400);
+  logLine('— call stack empty, draining microtask queue —');
+  await sleep(700);
+  micro.style.opacity = '0.3';
+  logLine('3: promise.then (microtask)');
+  await sleep(600);
+  microEl.removeChild(micro);
+
+  await sleep(400);
+  logLine('— microtasks done, macrotask queue gets a turn —');
+  await sleep(700);
+  macro.style.opacity = '0.3';
+  logLine('4: setTimeout (macrotask)');
+  await sleep(600);
+  macroEl.removeChild(macro);
+
+  runBtn.disabled = false;
+}
+
+runBtn.addEventListener('click', playDemo);
+</script>
+
+</body>
+</html>
