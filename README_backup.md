@@ -4,37 +4,8 @@ A learning repository tracking JavaScript fundamentals from first principles, al
 
 ---
 
-## Getting Started
-
-**Requirements:** Node.js 18+ (check with `node -v`). No dependencies are needed for the plain `.js` lessons.
-
-```bash
-# Clone and run any lesson directly
-git clone <repo-url> && cd LearnPlaywright3x
-node 01_chapter_Javascript/01_HelloWorld.js
-```
-
-Most chapters are dependency-free JavaScript. Run any lesson with:
-
-```bash
-node path/to/file.js
-```
-
-The one exception is `18_Async_Await/149_Example.spec.ts`, a Playwright test. It needs the Playwright toolchain:
-
-```bash
-npm init playwright@latest   # once per machine/project
-npx playwright install       # downloads browsers
-npx playwright test 18_Async_Await/149_Example.spec.ts
-```
-
-**How to use this repo:** read a chapter's Concept section → open its lesson files → predict each output before running → verify with `node` → close gaps with the linked IQ notes and MCQs.
-
----
-
 ## Table of Contents
 
-- [Getting Started](#getting-started)
 - [Repo Structure](#repo-structure)
 - [Repeatable “Go Go Go” Command](#repeatable-go-go-go-command)
 - [00 — GenAI / RICE Prompting](#00--genai--rice-prompting)
@@ -71,7 +42,6 @@ npx playwright test 18_Async_Await/149_Example.spec.ts
   - [11.7 — Hoisting](#117--hoisting)
   - [11.8 — Temporal Dead Zone (TDZ)](#118--temporal-dead-zone-tdz)
   - [11.9 — Hoisting Trap: Declaration vs Expression](#119--hoisting-trap-declaration-vs-expression)
-  - [11.10 — Functions in Real Test Code](#1110--functions-in-real-test-code)
 - [12 — Scope & Closures](#12--scope--closures)
   - [12.1 — Scope Chain](#121--scope-chain)
   - [12.2 — Closures](#122--closures)
@@ -97,8 +67,6 @@ npx playwright test 18_Async_Await/149_Example.spec.ts
   - [17.2 — Chaining Promises](#172--chaining-promises)
   - [17.3 — all / allSettled / race](#173--all--allsettled--race)
 - [18 — Async / Await](#18--async--await)
-- [19 — Export / Import (ES Modules)](#19--export--import-es-modules)
-- [20 — Classes & OOP](#20--classes--oop)
 - [MCQ — Practice Questions](#mcq--practice-questions)
 - [IQ_Notes — Reference Library](#iq_notes--reference-library)
 
@@ -289,17 +257,6 @@ LearnPlaywright3x/
 │   ├── 152_Parall_Execution.js              # independent API calls with Promise.all
 │   ├── 153_API_Flaky.js                     # bounded retry-until-success pattern
 │   └── 154_IQ.js                            # async/await interview examples and execution order
-├── 19_Export_Import/
-│   ├── package.json                          # scopes this chapter's .js files as ES modules
-│   ├── utils.js                              # named exports: BASE_URL, formatTestName, formatTestName2
-│   ├── testutil.js                           # named exports: BASE_URL, formatUpperCaseString
-│   ├── 155.js                                # importing named exports from testutil.js
-│   ├── 156_test.js                           # importing from two modules with alias renaming
-│   ├── 157.js                                # default import from logs/logger.js
-│   └── logs/
-│       └── logger.js                         # default export (log) + named export (logBetter)
-├── 20_Class_Object_OOPs/
-│   └── 158.js                                # class syntax, private fields (#), new keyword, object references
 ├── MCQ/
 │   └── Array_MCQ.md                         # array practice multiple-choice questions
 └── IQ_Notes/
@@ -420,7 +377,7 @@ let 变量 = "Chinese characters";
 var g = 10; // cmd + /, ctrl + /
 ```
 
-Full identifier rules + naming convention tables live in [`IQ_Notes/01_Identifier_Rules.md`](IQ_Notes/01_Identifier_Rules.md). The complete reserved-keyword list is in [`IQ_Notes/02_Keyword_Notes.md`](IQ_Notes/02_Keyword_Notes.md).
+Full identifier rules + naming convention tables live in [`IQ_Notes/01_Identifier_Rules.md`](IQ_Notes/01_Identifier_Rules.md).
 
 ---
 
@@ -1248,8 +1205,6 @@ console.log(p, q);                 // 2 1
 | Swap | `[a, b] = [b, a]` |
 | Index + value in a loop | `for (let [i, v] of arr.entries())` |
 
-**Practice:** test yourself with [`MCQ/Array_MCQ.md`](MCQ/Array_MCQ.md) before moving to functions.
-
 ---
 
 ### 11 — Functions
@@ -1667,8 +1622,6 @@ console.log(a);       // "temp"  — same variable, function-scoped
 
 Full walkthrough with class hoisting, interview traps, and phase diagrams: [`11_chapter_Funtions/102_Hoisting_TDZ.md`](11_chapter_Funtions/102_Hoisting_TDZ.md).
 
-**Reference:** how source code becomes machine code — [`IQ_Notes/Source_Code_ByteCODE_Binary_IQ.md`](IQ_Notes/Source_Code_ByteCODE_Binary_IQ.md).
-
 ---
 
 #### 11.8 — Temporal Dead Zone (TDZ)
@@ -1773,7 +1726,7 @@ console.log(sayHi("Bob"));      // "Hi, Bob!"  ✅ after the line
 
 ---
 
-#### 11.10 — Functions in Real Test Code
+### Functions in Real Test Code
 
 **Concept:** The same validation logic written as a declaration, an expression, and an arrow — proving the three forms are interchangeable for ordinary test helpers.
 
@@ -2751,144 +2704,6 @@ flowchart TD
 
 ---
 
-### 19 — Export / Import (ES Modules)
-
-**Concept:** ES modules let you split code across files. `export` makes a variable, function, or class available to other files; `import` brings it in. There are two export styles: **named exports** (export specific things by name) and **default exports** (export one main thing per file).
-
-**Why:** Real test projects are never one file. Page objects, utilities, config, and loggers each live in their own file and are wired together with imports — this is how Playwright fixtures and helpers connect.
-
-**Q&A — why use this?**
-- **Q: Named vs default export?** A: Named exports let you export many things from one file (`export let BASE_URL`, `export function formatName`). A default export is the file's single main export (`export default function log`). You can mix both in one file.
-- **Q: How do I import a named export?** A: Use curly braces with the exact name: `import { BASE_URL, formatTestName } from './utils.js'`. Rename with `as`: `import { BASE_URL as url } from './utils.js'`.
-- **Q: How do I import a default export?** A: No curly braces, and you pick any name: `import log from './logs/logger.js'`.
-- **Q: What's the gotcha?** A: Named imports must match the exported name exactly (case-sensitive). A variable that is never exported is private to its file — `let fname = "Pramod"` in `testutil.js` is invisible to importers.
-
-```mermaid
-flowchart TD
-    U["utils.js"] -->|"export let BASE_URL<br/>export function formatTestName"| N["Named exports"]
-    T["testutil.js"] -->|"export let BASE_URL<br/>export function formatUpperCaseString"| N
-    L["logs/logger.js"] -->|"export default function log<br/>export function logBetter"| D["Default + named"]
-    N --> I1["import { BASE_URL, formatTestName } from './utils.js'"]
-    N --> I2["import { BASE_URL as alias } from './testutil.js'"]
-    D --> I3["import log from './logs/logger.js'"]
-    D --> I4["import { logBetter } from './logs/logger.js'"]
-```
-
-```js
-// utils.js — named exports
-export let BASE_URL = "https://api.example.com";
-
-export function formatTestName(name) {
-    return "TC_" + name.toUpperCase();
-}
-
-// testutil.js — named exports (different module, same export name BASE_URL)
-export let BASE_URL = "https://app.vwo.com";
-
-export function formatUpperCaseString(sname) {
-    return sname.toUpperCase();
-}
-
-// logs/logger.js — default export + named export
-export default function log(message) {
-    console.log("[LOG] " + message);
-}
-
-export function logBetter(message) {
-    console.log("[LOGS] " + message);
-}
-```
-
-```js
-// 155.js — importing named exports
-import { BASE_URL, formatUpperCaseString } from './testutil.js';
-console.log(BASE_URL);                              // "https://app.vwo.com"
-console.log(formatUpperCaseString("Pramod"));       // "PRAMOD"
-
-// 156_test.js — importing from two modules, renaming with `as`
-import { BASE_URL as bul_util, formatTestName } from "./utils.js";
-import { BASE_URL as bul_testtul, formatUpperCaseString } from "./testutil.js";
-console.log(bul_util);                              // "https://api.example.com"
-console.log(bul_testtul);                           // "https://app.vwo.com"
-console.log(formatTestName("login"));               // "TC_LOGIN"
-
-// 157.js — default import (no braces, any name)
-import log from './logs/logger.js';
-log('Starting');                                    // "[LOG] Starting"
-```
-
-| Export style | Syntax | Import syntax |
-|-------------|--------|---------------|
-| Named | `export let X` / `export function f()` | `import { X, f } from './file.js'` |
-| Default | `export default function f()` | `import f from './file.js'` (any name) |
-| Rename on import | — | `import { X as alias } from './file.js'` |
-
-Run the lessons with Node.js. The chapter's local `package.json` sets `"type": "module"`, so Node loads these `.js` files as ES modules without extra flags:
-
-```bash
-node 19_Export_Import/155.js
-node 19_Export_Import/156_test.js
-node 19_Export_Import/157.js
-```
-
----
-
-### 20 — Classes & OOP
-
-**Concept:** A `class` is a blueprint for creating objects with shared structure. It bundles **attributes** (data, declared as fields) and **behaviour** (functions, called methods). The `new` keyword creates an **instance** (object) from the class, and the variable holds a **reference** to that object — not the object itself.
-
-**Why:** Classes are how Playwright's Page Object Model is built. Every page class (`class LoginPage`) has locators (attributes) and actions like `login()` (methods). Understanding `new`, references, and private fields (`#`) is the foundation for writing maintainable test frameworks.
-
-**Q&A — why use this?**
-- **Q: What does `new Person()` do?** A: It allocates a new object in memory, runs the class constructor, and returns a reference to that object. Without `new`, `Person()` throws a `TypeError`.
-- **Q: What is a private field (`#name`)?** A: A field prefixed with `#` is truly private — it cannot be read or written from outside the class, not even by subclasses. This is the JS-native way to hide internal state.
-- **Q: What's the difference between `pramod` and `amit`?** A: Both are references to **different** `Person` objects. `pramod === amit` is `false` because `new` creates a distinct object each time — same blueprint, separate instances.
-- **Q: What's the gotcha?** A: A class is not hoisted like a function declaration. You must define the class before you `new` it. Also, forgetting `new` throws `TypeError: Class constructor Person cannot be invoked without 'new'`.
-
-```mermaid
-flowchart TD
-    C["class Person { } — the blueprint"] --> N1["new Person() — creates object 1"]
-    C --> N2["new Person() — creates object 2"]
-    N1 --> R1["pramod = reference → object 1"]
-    N2 --> R2["amit = reference → object 2"]
-    R1 -->|"pramod === amit"| F["false — different objects"]
-```
-
-```js
-class Person {
-    // Attributes (private fields — only accessible inside the class)
-    #name;
-    #age;
-
-    // Behaviour (methods)
-    eat() {}
-    sleep() {}
-}
-
-// Create instances — each `new` produces a separate object
-const pramod = new Person(); // pramod is a reference to a new Person object
-const amit = new Person();   // amit is a reference to a different Person object
-
-// pramod === amit  →  false  (different objects, same blueprint)
-```
-
-| Term | Means |
-|------|-------|
-| `class` | Blueprint — defines what every instance will have |
-| `new` | Creates a fresh object from the class |
-| Instance | The actual object created by `new` |
-| Reference | The variable holding the object's address |
-| `#field` | Private — inaccessible from outside the class |
-| Method | A function defined inside a class |
-
-Run the lesson:
-
-```bash
-node 20_Class_Object_OOPs/158.js
-```
-
----
-
 ## MCQ — Practice Questions
 
 **Concept:** [`MCQ/Array_MCQ.md`](MCQ/Array_MCQ.md) is a growing bank of short multiple-choice questions to self-test the concepts from each chapter, starting with arrays.
@@ -2916,34 +2731,4 @@ Concept explainers, generated on demand via the prompt template in [`IQ_Notes/RE
 
 ---
 
-> **TL;DR:** A from-scratch JavaScript fundamentals course for test automation, plus a GenAI prompting folder, an MCQ self-test bank, and an IQ_Notes reference library.
-
-## Progress Tracker
-
-| # | Chapter | Topics | Status |
-|---|---------|--------|:------:|
-| 00 | GenAI / RICE Prompting | Structured LLM prompts for framework generation | ✅ |
-| 01 | Hello World | `console.log`, running files with Node | ✅ |
-| 02 | `let` & Scope | Block scope, hoisting basics | ✅ |
-| 03 | Identifiers & Comments | Naming rules, conventions, JSDoc | ✅ |
-| 04 | Literals & Numbers | All literal types, `null` vs `undefined`, BigInt, NaN | ✅ |
-| 05 | Operators | Assignment, arithmetic, comparison, logical, ternary, `typeof`, `??` | ✅ |
-| 06 | Statements & Conditionals | `if / else if / else`, nesting | ✅ |
-| 07 | Switch Statements | Cases, fall-through, grouped cases, `switch(true)` | ✅ |
-| 08 | User Input | `prompt`, `readline`, `prompt-sync`, stdin | ✅ |
-| 09 | Loops | `for`, `while`, `do...while`, nested loops, `break` | ✅ |
-| 10 | Arrays | Create, access, add/remove, search, iterate, transform, sort, slice, combine, check, copy, destructure | ✅ |
-| 11 | Functions | Four types, expressions, arrows, IIFE, spread/rest, `return`, hoisting, TDZ | ✅ |
-| 12 | Scope & Closures | Scope chain, private state, retry trackers | ✅ |
-| 13 | Strings | Quotes, templates, access, search, extract, split/join, conversion | ✅ |
-| 14 | Objects | Literals, property access, mutation, nesting, methods, value vs reference | ✅ |
-| 15 | Multi-Dimensional Arrays | 2D grids, nested loops, star patterns | ✅ |
-| 16 | Callbacks | Sync vs async callbacks, callback hell | ✅ |
-| 17 | Promises | States, then/catch/finally, chaining, all/allSettled/race | ✅ |
-| 18 | Async / Await | Error handling, sequential vs parallel, retries, microtask order | ✅ |
-| 19 | Export / Import (ES Modules) | Named exports, default exports, alias imports, multi-module wiring | ✅ |
-| 20 | Classes & OOP | `class` syntax, `new` keyword, private fields (`#`), object references | ✅ |
-| — | MCQ Practice | Array multiple-choice bank (more coming) | 🚧 |
-| — | IQ_Notes | Standalone concept references via prompt template | 🚧 |
-
-**Suggested next chapters:** Playwright fixtures · Page Object Model · API testing with `request` · Network interception
+> **TL;DR:** This repo is a from-scratch JavaScript fundamentals course (`console.log` → scoping → identifiers → literals/numbers → operators → conditionals → switch statements → user input → loops → arrays: create, search, iterate, transform, sort, slice, combine, check, copy, destructure → functions: the four types, expressions, arrows, IIFE, spread/rest, `return`, `var`/`let`/`const`, hoisting, TDZ → scope & closures: scope chain, private state, retry trackers → strings: quotes, template literals, character access, searching, extraction, transformation, splitting, joining, conversion → objects: literals, property access, mutation, nesting, methods, value vs reference → callbacks → promises → async/await: error handling, sequential and parallel execution, retries, microtask order) plus a `00_chaptet_GENAI` folder for LLM automation-framework prompting, an `MCQ` self-test bank, and an `IQ_Notes` library of standalone concept references anyone can regenerate with the same prompt template.

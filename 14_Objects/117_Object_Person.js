@@ -165,7 +165,6 @@ const user = {
     },
 };
 
-console.log(user.address.houseNumber);
-// console.log(user);
+console.log(user);
 console.log(user.getIntroduction());
 console.log(user.getFullAddress());
