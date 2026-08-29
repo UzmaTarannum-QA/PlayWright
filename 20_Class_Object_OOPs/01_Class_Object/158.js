@@ -11,6 +11,7 @@ class Person {
 
 // CAB -> Class has the A, B
 
+
 const pramod = new Person();
 // Object - new Person();
 // = Operator
