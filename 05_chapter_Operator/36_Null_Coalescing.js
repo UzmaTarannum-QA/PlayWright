@@ -1,6 +1,6 @@
-let amul = null;
-let val = amul ?? "NANDANI Milk";
-console.log(val);
+// let amul = null;
+// let val = amul ?? "NANDANI Milk";
+// console.log(val);
 
 
 let api_response = null;

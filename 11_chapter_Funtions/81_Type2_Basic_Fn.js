@@ -5,10 +5,10 @@
 function greetByName(name){
       console.log("Hi", name);
 }
-greetByName("Pramod"); // argument
-greetByName("Dipak");
-greetByName("Meeti");
-greetByName("Sangeetha");
+// greetByName("Pramod"); // argument
+// greetByName("Dipak");
+// greetByName("Meeti");
+// greetByName("Sangeetha");
 
 let name1 = greetByName("Sumit");
 console.log(name1);
